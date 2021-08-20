@@ -39,13 +39,11 @@ ui <-
           label = NULL,
           choices = sort(imd_with_boundaries$lad_name),
           options = list(
-            placeholder = "Select a Local Authority",
-            onInitialize = I('function() { this.setValue(""); }')
+            placeholder = "Select a Local Authority"
           )
         )
       )
     ),
-
     # - Map & Plot -
     fluidRow(
 
@@ -72,10 +70,28 @@ server <-
     # - Track selections -
     # Track which map polygons the use has clicked on
     selected_polygon <- reactiveVal("E06000001")
+    
+    # Track which choice has been made from input selectbox
+    selected_dropdown <- reactiveVal("")
 
     observeEvent(input$map_shape_click, {
+      # Update target polygon
       input$map_shape_click$id |>
       selected_polygon()
+      
+      # Change selectbox text to reflect new region choice
+      selection <- imd_with_boundaries |> filter(lad_code == selected_polygon())
+      selection$lad_name |> selected_dropdown()
+      
+      updateSelectizeInput(session, 'selectbox', selected=selected_dropdown())
+      }
+    )
+    
+    observeEvent(input$selectbox, {
+      
+      selection <- imd_with_boundaries |> filter(lad_name == input$selectbox) |> select(lad_code)
+      selection$lad_code |> selected_polygon()
+      }
     )
 
     # - Map -
@@ -104,7 +120,7 @@ server <-
       })
 
     # - Table -
-    output$Table <-
+    output$imdTable <-
       renderTable(
         imd_england_lad |>
         filter(lad_code == selected_polygon()) |>
@@ -116,6 +132,5 @@ server <-
         select(-lad_code)
       )
   }
-
 # ---- Run App ----
 shinyApp(ui = ui, server = server)
