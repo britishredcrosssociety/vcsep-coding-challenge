@@ -71,7 +71,7 @@ server <-
 
     # - Track selections -
     # Track which map polygons the user has clicked on
-    selected_polygon <- reactiveVal("E06000001")
+    selected_polygon <- reactiveVal("")
 
     observeEvent(input$map_shape_click, {
       input$map_shape_click$id |>
@@ -127,7 +127,10 @@ server <-
 
     # - Table -
     output$imdTable <-
-      renderTable(
+      renderTable({
+        
+       validate(need(selected_polygon() != "", 'Choose a local authority'))
+        
         imd_england_lad |>
         filter(lad_code == selected_polygon()) |>
         pivot_longer(
@@ -135,8 +138,9 @@ server <-
           names_to = "Variable",
           values_to = "Value"
         ) |>
-        select(-lad_code)
-      )
+        select(-lad_code) 
+        
+      })
   }
 
 # ---- Run App ----
