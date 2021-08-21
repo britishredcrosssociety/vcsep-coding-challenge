@@ -76,7 +76,19 @@ server <-
     observeEvent(input$map_shape_click, {
       input$map_shape_click$id |>
       selected_polygon()
+      
     })
+    
+    observeEvent(input$selectbox, {
+      
+      imd_with_boundaries |>
+        st_drop_geometry() |>
+        filter(lad_name == input$selectbox) |>
+        select(lad_code) |> 
+        pull() |> 
+        selected_polygon() 
+      
+    },  ignoreInit = TRUE) #avoids observeEvent running when created
 
     # - Map -
     output$map <-
