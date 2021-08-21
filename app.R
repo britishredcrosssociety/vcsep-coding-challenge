@@ -76,7 +76,7 @@ server <-
     observeEvent(input$map_shape_click, {
       input$map_shape_click$id |>
       selected_polygon()
-    )
+    })
 
     # - Map -
     output$map <-
