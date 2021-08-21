@@ -77,10 +77,20 @@ server <-
       input$map_shape_click$id |>
       selected_polygon()
       
+      #retrieve the lad name for the polygon chosen on map
+     selected_in_dropdown <- imd_with_boundaries |>
+        st_drop_geometry() |>
+        filter(lad_code == selected_polygon()) |>
+        select(lad_name)
+      
+     #update the name selected on the selectInput so reflects that chosen on map
+      updateSelectInput(session, "selectbox", selected = selected_in_dropdown)
+      
     })
     
     observeEvent(input$selectbox, {
       
+      #retrieve the lad_code for the lad_name selected on the dropdown
       imd_with_boundaries |>
         st_drop_geometry() |>
         filter(lad_name == input$selectbox) |>
