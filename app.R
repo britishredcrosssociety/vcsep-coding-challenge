@@ -104,7 +104,7 @@ server <-
       })
 
     # - Table -
-    output$Table <-
+    output$imdTable <-
       renderTable(
         imd_england_lad |>
         filter(lad_code == selected_polygon()) |>
