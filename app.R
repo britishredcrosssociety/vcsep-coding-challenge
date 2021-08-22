@@ -71,12 +71,34 @@ server <-
 
     # - Track selections -
     # Track which map polygons the user has clicked on
-    selected_polygon <- reactiveVal("E06000001")
+    selected_polygon <- reactiveVal("")
 
     observeEvent(input$map_shape_click, {
       input$map_shape_click$id |>
       selected_polygon()
-    )
+      
+      #retrieve the lad name for the polygon chosen on map
+     selected_in_dropdown <- imd_with_boundaries |>
+        st_drop_geometry() |>
+        filter(lad_code == selected_polygon()) |>
+        select(lad_name)
+      
+     #update the name selected on the selectInput so reflects that chosen on map
+      updateSelectInput(session, "selectbox", selected = selected_in_dropdown)
+      
+    })
+    
+    observeEvent(input$selectbox, {
+      
+      #retrieve the lad_code for the lad_name selected on the dropdown
+      imd_with_boundaries |>
+        st_drop_geometry() |>
+        filter(lad_name == input$selectbox) |>
+        select(lad_code) |> 
+        pull() |> 
+        selected_polygon() 
+      
+    },  ignoreInit = TRUE) #avoids observeEvent running when created
 
     # - Map -
     output$map <-
@@ -104,8 +126,11 @@ server <-
       })
 
     # - Table -
-    output$Table <-
-      renderTable(
+    output$imdTable <-
+      renderTable({
+        
+       validate(need(selected_polygon() != "", 'Choose a local authority'))
+        
         imd_england_lad |>
         filter(lad_code == selected_polygon()) |>
         pivot_longer(
@@ -113,8 +138,9 @@ server <-
           names_to = "Variable",
           values_to = "Value"
         ) |>
-        select(-lad_code)
-      )
+        select(-lad_code) 
+        
+      })
   }
 
 # ---- Run App ----
