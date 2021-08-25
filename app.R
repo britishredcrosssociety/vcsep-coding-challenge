@@ -60,7 +60,12 @@ ui <-
       column(
         width = 6,
         align = "center",
-        tableOutput("imdTable")
+        tableOutput("Table")
+########
+# Bug 2 - The above line was tableOutput("imdTable"), however the
+#         table is just called "Table" below. Deleting the imd (or
+#         inserting it in the table definition) fixes the problem
+########
       )
     )
   )
@@ -71,13 +76,35 @@ server <-
 
     # - Track selections -
     # Track which map polygons the user has clicked on
-    selected_polygon <- reactiveVal("E06000001")
 
+# Changed to selected_all to implement the feature as name made more sense 
+#    selected_polygon <- reactiveVal("E06000001")
+    selected_all <- reactiveVal("E06000001")
+
+########
+# Feature - Need to insert some code to track the event of someone
+#           clicking on the list, hence the below observeEvent.
+#           Note that I use the same variable for both observed events
+#           as either of them occurring should change the same table.
+#           Also the input is more complicated as the selectbox outputs
+#           a region name and we have to extract from the
+#           imd_with_boundaries table the lad_code corresponding with
+#           that region
+########
+    
+    observeEvent(input$selectbox, {
+      filter(imd_with_boundaries, lad_name==input$selectbox)$lad_code |>
+        selected_all()
+    })
+    
     observeEvent(input$map_shape_click, {
       input$map_shape_click$id |>
-      selected_polygon()
-    )
-
+      selected_all()
+    })
+########    
+# Bug 1 - Missing } in the above, inserting this fixes the problem
+########
+    
     # - Map -
     output$map <-
       renderLeaflet({
@@ -107,8 +134,10 @@ server <-
     output$Table <-
       renderTable(
         imd_england_lad |>
-        filter(lad_code == selected_polygon()) |>
-        pivot_longer(
+# Change below to selected_all for feature, and had to add an if statement
+# due to complications with the default value of the select box
+        filter(if (length(selected_all())==0) lad_code=="E06000001" else lad_code == selected_all()) |>
+          pivot_longer(
           cols = !lad_code,
           names_to = "Variable",
           values_to = "Value"
