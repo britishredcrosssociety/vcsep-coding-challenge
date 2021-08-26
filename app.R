@@ -28,7 +28,6 @@ ui <-
       align = "center",
       titlePanel("IMD Explorer")
     ),
-
     # - Select Box -
     fluidRow(
       column(
@@ -55,7 +54,8 @@ ui <-
         align = "center",
         leafletOutput("map", height = 600)
       ),
-
+      
+      
       # - Table -
       column(
         width = 6,
@@ -71,13 +71,30 @@ server <-
 
     # - Track selections -
     # Track which map polygons the user has clicked on
-    selected_polygon <- reactiveVal("E06000001")
-
+    # or which LAD name the user has selected from the select box
+    selected_lad <- reactiveVal("")
+    
     observeEvent(input$map_shape_click, {
+      # Track map click
       input$map_shape_click$id |>
-      selected_polygon()
-    )
-
+      selected_lad()
+      
+      # Update the selected value of selectbox
+      lad_Row <- imd_with_boundaries |>
+      filter(lad_code == input$map_shape_click$id)
+      updateSelectizeInput(session = getDefaultReactiveDomain(), 
+                           inputId = 'selectbox',
+                           selected = lad_Row$lad_name)
+    })
+    
+    observeEvent(input$selectbox, {
+      if (input$selectbox!=''){
+        lad_Row <- imd_with_boundaries |>
+        filter(lad_name == input$selectbox)
+        selected_lad(lad_Row$lad_code)
+      }
+    })
+    
     # - Map -
     output$map <-
       renderLeaflet({
@@ -104,10 +121,10 @@ server <-
       })
 
     # - Table -
-    output$Table <-
+    output$imdTable <-
       renderTable(
         imd_england_lad |>
-        filter(lad_code == selected_polygon()) |>
+        filter(lad_code == selected_lad()) |>
         pivot_longer(
           cols = !lad_code,
           names_to = "Variable",
